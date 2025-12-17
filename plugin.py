@@ -211,16 +211,18 @@ class UnnamedImageSearchIntegrate(NcatBotPlugin):
     description = "集成搜图功能"  # 可选
     author = "default_user"  # 可选
 
-    async def on_load(self) -> None:
+    saucenao_client: Optional[SauceNAOClient] = None
+    search_config: Optional[ImageSearchConfig] = None
 
+    async def on_load(self) -> None:
+        self.search_config = ImageSearchConfig(self)
+        if self.search_config.saucenao_config.api_token:
+            logger.info(f'SauceNAO API Token: {self.search_config.saucenao_config.api_token}')
+            self.saucenao_client = SauceNAOClient(self.search_config.saucenao_config.api_token)
         await super().on_load()
 
     async def on_close(self) -> None:
         await super().on_close()
-
-    async def request_saucenao(self, image_url: str) -> UnifiedImageResult:
-        async with httpx.AsyncClient() as client:
-            resp = await client.get()
 
     @on_group_at
     async def search_image(self, event: GroupMessageEvent):
@@ -246,7 +248,6 @@ class UnnamedImageSearchIntegrate(NcatBotPlugin):
                 logger.debug(f'被引用消息非图片, 实际类型: {cited_message.message.messages[0].msg_seg_type}')
             logger.debug(f'引用消息类型校验通过, {type(cited_message.message.messages[0])}')
             single_cited_message = cited_message.message.messages[0]
-            assert isinstance(single_cited_message, Image)
             image_message = single_cited_message
         if image_message is None:
             logger.debug(f'未置值')
@@ -257,4 +258,17 @@ class UnnamedImageSearchIntegrate(NcatBotPlugin):
         logger.debug(f'通过所有消息校验')
         await event.reply(f'收到搜图请求')
         logger.debug(f'图片url为: {image_message.url}')
+        if self.saucenao_client is None:
+            await event.reply(f'未配置搜图引擎, 联系管理员')
+            return
         image_url = image_message.url
+        try:
+            search_results = await self.saucenao_client.search(image_url, self.search_config.saucenao_config.min_similarity)
+        except Exception as ise:
+            await event.reply(f'搜图时发生错误')
+            logger.exception('搜图错误', exc_info=ise)
+            return
+        if not search_results:
+            await event.reply(f'没有结果')
+            return
+        await event.reply(f'作品标题: {search_results[0].title}\n链接:{search_results[0].source_url}', image=search_results[0].thumbnail_url)
