@@ -271,4 +271,4 @@ class UnnamedImageSearchIntegrate(NcatBotPlugin):
         if not search_results:
             await event.reply(f'没有结果')
             return
-        await event.reply(f'作品标题: {search_results[0].title}\n链接:{search_results[0].source_url}', image=search_results[0].thumbnail_url)
+        await event.reply(f'作品标题: {search_results[0].title}\n链接:{search_results[0].source_url}')
