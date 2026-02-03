@@ -250,8 +250,8 @@ class UnnamedImageSearchIntegrate(NcatBotPlugin):
             logger.debug(f'引用消息类型校验通过, {type(cited_message.message.messages[0])}')
             single_cited_message = cited_message.message.messages[0]
             if not isinstance(single_cited_message, Image):
-                logger.error('消息类型不匹配')
-                raise AssertionError('消息类型不匹配')
+                logger.debug('非图片消息')
+                return
             image_message = single_cited_message
         if image_message is None:
             logger.debug(f'未置值')
