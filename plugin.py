@@ -140,7 +140,7 @@ class SauceNAOClient:
             "testmode": 0,
             "db": 999,  # 全库搜索
             "numres": 10,
-            "hide": 0,  # 隐藏明确的限制级内容
+            "hide": 0,
             "url": image_url  # URL 模式
         }
         async with httpx.AsyncClient(timeout=15.0) as client:
